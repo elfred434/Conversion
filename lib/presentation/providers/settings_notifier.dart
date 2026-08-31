@@ -15,6 +15,10 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
     );
   }
 
+  void setSettings(AppSettings s) {
+    state = s;
+  }
+
   Future<void> load() async => state = await _repository.load();
   Future<void> save() => _repository.save(state);
 }

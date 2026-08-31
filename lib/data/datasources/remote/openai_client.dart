@@ -17,16 +17,20 @@ class OpenAiClient implements LlmClient {
     this.model = 'gpt-4o-mini',
   });
 
+  String _role(ConversationMessage m) =>
+      m.role == MessageRole.assistant ? 'assistant' : (m.role == MessageRole.system ? 'system' : 'user');
+
   @override
-  Stream<String> streamChat(List<ConversationMessage> history) async* {
-    final messages = history
-        .map((m) => {
-              'role': m.role == MessageRole.assistant
-                  ? 'assistant'
-                  : (m.role == MessageRole.system ? 'system' : 'user'),
-              'content': m.content,
-            })
-        .toList();
+  Stream<String> streamChat({
+    required ConversationMessage systemPrompt,
+    required List<ConversationMessage> history,
+    required ConversationMessage userMessage,
+  }) async* {
+    final messages = <Map<String, String>>[
+      {'role': _role(systemPrompt), 'content': systemPrompt.content},
+      for (final m in history) {'role': _role(m), 'content': m.content},
+      {'role': _role(userMessage), 'content': userMessage.content},
+    ];
 
     final request = http.Request('POST', Uri.parse('$baseUrl/chat/completions'))
       ..headers['Authorization'] = 'Bearer $apiKey'
@@ -55,10 +59,10 @@ class OpenAiClient implements LlmClient {
   }
 
   @override
-  Future<String?> correctText(String text, CefrLevel level) async {
+  Future<String?> correctText(String userText, {required CefrLevel level}) async {
     final prompt = '''
 You are an English teacher. The student (CEFR level: ${level.label}) wrote:
-"$text"
+"$userText"
 Correct the text if needed. Reply ONLY with strict JSON:
 {"has_error": true/false, "corrected": "<corrected text or empty if none>", "explanation": "<short explanation in English>"}
 ''';

@@ -18,8 +18,13 @@ class GeminiClient implements LlmClient {
   });
 
   @override
-  Stream<String> streamChat(List<ConversationMessage> history) async* {
-    final contents = history
+  Stream<String> streamChat({
+    required ConversationMessage systemPrompt,
+    required List<ConversationMessage> history,
+    required ConversationMessage userMessage,
+  }) async* {
+    final parts = [systemPrompt, ...history, userMessage];
+    final contents = parts
         .map((m) => {
               'role': m.role == MessageRole.user ? 'user' : 'model',
               'parts': [
@@ -51,10 +56,10 @@ class GeminiClient implements LlmClient {
   }
 
   @override
-  Future<String?> correctText(String text, CefrLevel level) async {
+  Future<String?> correctText(String userText, {required CefrLevel level}) async {
     final prompt = '''
 You are an English teacher. The student (CEFR level: ${level.label}) wrote:
-"$text"
+"$userText"
 Correct the text if needed. Reply ONLY with strict JSON:
 {"has_error": true/false, "corrected": "<corrected text or empty if none>", "explanation": "<short explanation in English>"}
 ''';
