@@ -96,22 +96,14 @@ release:
     - apt-get update -yqq && apt-get install -yqq curl zip
     - zip -r web.zip build/web
   script:
-    - TAG="v$CI_PIPELINE_IID"
-    - echo "Creating release $TAG"
-    - >
-      curl -sS -H "PRIVATE-TOKEN: $GITLAB_TOKEN" -X POST
-      "https://gitlab.com/api/v4/projects/$CI_PROJECT_ID/releases"
-      --data-urlencode "name=Build $CI_PIPELINE_IID"
-      --data-urlencode "tag_name=$TAG"
-      --data-urlencode "ref=$CI_DEFAULT_BRANCH"
-      --data-urlencode "description=Release automatique (APK Android + Web)"
-    - echo "Uploading APK"
-    - curl -sS -H "PRIVATE-TOKEN: $GITLAB_TOKEN" -X POST
-      "https://gitlab.com/api/v4/projects/$CI_PROJECT_ID/releases/$TAG/assets"
-      -F "file=@./build/app/outputs/flutter-apk/app-release.apk"
-    - echo "Uploading Web"
-    - curl -sS -H "PRIVATE-TOKEN: $GITLAB_TOKEN" -X POST
-      "https://gitlab.com/api/v4/projects/$CI_PROJECT_ID/releases/$TAG/assets"
-      -F "file=@./web.zip"
+    - |
+      TAG="v${CI_PIPELINE_IID}"
+      curl -sS -H "PRIVATE-TOKEN: ${GITLAB_TOKEN}" -X POST "https://gitlab.com/api/v4/projects/${CI_PROJECT_ID}/releases" \
+        --data-urlencode "name=Build ${CI_PIPELINE_IID}" \
+        --data-urlencode "tag_name=${TAG}" \
+        --data-urlencode "ref=${CI_DEFAULT_BRANCH}" \
+        --data-urlencode "description=Release automatique (APK Android + Web)"
+      curl -sS -H "PRIVATE-TOKEN: ${GITLAB_TOKEN}" -X POST "https://gitlab.com/api/v4/projects/${CI_PROJECT_ID}/releases/${TAG}/assets" -F "file=@./build/app/outputs/flutter-apk/app-release.apk"
+      curl -sS -H "PRIVATE-TOKEN: ${GITLAB_TOKEN}" -X POST "https://gitlab.com/api/v4/projects/${CI_PROJECT_ID}/releases/${TAG}/assets" -F "file=@./web.zip"
   variables:
     GITLAB_TOKEN: $GITLAB_TOKEN
