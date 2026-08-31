@@ -98,12 +98,17 @@ release:
   script:
     - |
       TAG="v${CI_PIPELINE_IID}"
+      BASE="${CI_PROJECT_URL}"
       curl -sS -H "PRIVATE-TOKEN: ${GITLAB_TOKEN}" -X POST "https://gitlab.com/api/v4/projects/${CI_PROJECT_ID}/releases" \
         --data-urlencode "name=Build ${CI_PIPELINE_IID}" \
         --data-urlencode "tag_name=${TAG}" \
         --data-urlencode "ref=${CI_DEFAULT_BRANCH}" \
         --data-urlencode "description=Release automatique (APK Android + Web)"
-      curl -sS -H "PRIVATE-TOKEN: ${GITLAB_TOKEN}" -X POST "https://gitlab.com/api/v4/projects/${CI_PROJECT_ID}/releases/${TAG}/assets" -F "file=@./build/app/outputs/flutter-apk/app-release.apk"
-      curl -sS -H "PRIVATE-TOKEN: ${GITLAB_TOKEN}" -X POST "https://gitlab.com/api/v4/projects/${CI_PROJECT_ID}/releases/${TAG}/assets" -F "file=@./web.zip"
+      APK_PATH=$(curl -sS -H "PRIVATE-TOKEN: ${GITLAB_TOKEN}" -X POST "https://gitlab.com/api/v4/projects/${CI_PROJECT_ID}/uploads" -F "file=@./build/app/outputs/flutter-apk/app-release.apk" | python3 -c "import sys,json;print(json.load(sys.stdin)['full_path'])")
+      WEB_PATH=$(curl -sS -H "PRIVATE-TOKEN: ${GITLAB_TOKEN}" -X POST "https://gitlab.com/api/v4/projects/${CI_PROJECT_ID}/uploads" -F "file=@./web.zip" | python3 -c "import sys,json;print(json.load(sys.stdin)['full_path'])")
+      curl -sS -H "PRIVATE-TOKEN: ${GITLAB_TOKEN}" -X POST "https://gitlab.com/api/v4/projects/${CI_PROJECT_ID}/releases/${TAG}/assets/links" \
+        --data-urlencode "name=app-release.apk" --data-urlencode "url=${BASE}${APK_PATH}" --data-urlencode "link_type=package"
+      curl -sS -H "PRIVATE-TOKEN: ${GITLAB_TOKEN}" -X POST "https://gitlab.com/api/v4/projects/${CI_PROJECT_ID}/releases/${TAG}/assets/links" \
+        --data-urlencode "name=web.zip" --data-urlencode "url=${BASE}${WEB_PATH}" --data-urlencode "link_type=package"
   variables:
     GITLAB_TOKEN: $GITLAB_TOKEN
