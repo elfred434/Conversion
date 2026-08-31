@@ -85,7 +85,7 @@ build_linux:
 # Release GitLab : attache l'APK Android et le build Web (zippe).
 release:
   stage: release
-  image: registry.gitlab.com/gitlab-org/cli:latest
+  image: ubuntu:22.04
   needs: [build_android, build_web]
   dependencies:
     - build_android
@@ -93,7 +93,8 @@ release:
   rules:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
   before_script:
-    - apt-get update -yqq && apt-get install -yqq zip
+    - apt-get update -yqq && apt-get install -yqq curl zip
+    - curl -sL https://gitlab.com/gitlab-org/cli/-/raw/trunk/scripts/install.sh | bash
     - zip -r web.zip build/web
   script:
     - glab release create "v$CI_PIPELINE_IID"
