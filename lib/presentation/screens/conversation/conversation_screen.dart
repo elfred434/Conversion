@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:speech_to_text/speech_to_text.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:english_conversation_app/presentation/providers/providers.dart';
 import 'package:english_conversation_app/presentation/widgets/message_bubble.dart';
 
@@ -16,6 +18,8 @@ class ConversationScreen extends ConsumerStatefulWidget {
 class _ConversationScreenState extends ConsumerState<ConversationScreen> {
   final _controller = TextEditingController();
   final _scroll = ScrollController();
+  final _speech = SpeechToText();
+  bool _isListening = false;
   bool _started = false;
 
   @override
@@ -75,6 +79,46 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
     ref.read(chatProvider.notifier).send(text);
   }
 
+  Future<void> _toggleListen() async {
+    if (_isListening) {
+      await _speech.stop();
+      setState(() => _isListening = false);
+      return;
+    }
+    final status = await Permission.microphone.request();
+    if (!status.isGranted) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Autorise le micro pour la reconnaissance vocale.')),
+        );
+      }
+      return;
+    }
+    final available = await _speech.initialize(
+      onError: (e) => debugPrint('speech error: $e'),
+    );
+    if (!available) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Reconnaissance vocale indisponible sur cet appareil.')),
+        );
+      }
+      return;
+    }
+    setState(() => _isListening = true);
+    await _speech.listen(
+      localeId: 'en_US',
+      onResult: (result) {
+        _controller.text = result.recognizedWords;
+        if (result.finalResult && result.recognizedWords.trim().isNotEmpty) {
+          _speech.stop();
+          if (mounted) setState(() => _isListening = false);
+          _send();
+        }
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(chatProvider);
@@ -118,6 +162,12 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
               padding: EdgeInsets.all(8),
               child: LinearProgressIndicator(),
             ),
+          if (_isListening)
+            const Padding(
+              padding: EdgeInsets.all(8),
+              child: Text('🎤 Écoute… parle en anglais',
+                  style: TextStyle(color: Colors.red)),
+            ),
           Padding(
             padding: const EdgeInsets.all(12),
             child: Row(
@@ -126,12 +176,19 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
                   child: TextField(
                     controller: _controller,
                     decoration: const InputDecoration(
-                      hintText: 'Écris en anglais…',
+                      hintText: 'Écris ou parle en anglais…',
                     ),
                     onSubmitted: (_) => _send(),
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 4),
+                IconButton(
+                  onPressed: state.isStreaming ? null : _toggleListen,
+                  icon: Icon(_isListening ? Icons.mic : Icons.mic_none),
+                  color: _isListening ? Colors.red : null,
+                  tooltip: 'Reconnaissance vocale',
+                ),
+                const SizedBox(width: 4),
                 IconButton.filled(
                   onPressed: state.isStreaming ? null : _send,
                   icon: const Icon(Icons.send),
@@ -146,6 +203,7 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
 
   @override
   void dispose() {
+    _speech.cancel();
     _controller.dispose();
     _scroll.dispose();
     super.dispose();
