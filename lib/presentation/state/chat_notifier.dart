@@ -23,6 +23,11 @@ class ChatNotifier extends StateNotifier<ChatState> {
   String _newId() =>
       'm${_counter++}_${DateTime.now().microsecondsSinceEpoch}';
 
+  /// Reduit les infos sensibles (cle API) des messages d'erreur affiches a l'utilisateur.
+  String _redact(String message) {
+    return message.replaceAll(RegExp(r'key=[^&\s"]+'), 'key=***');
+  }
+
   /// Demarre une nouvelle conversation.
   Future<void> start({required CefrLevel level, String? scenarioId}) async {
     _level = level;
@@ -42,7 +47,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
         );
       }
     } catch (e) {
-      state = state.copyWith(error: e.toString());
+      state = state.copyWith(error: _redact(e.toString()));
     } finally {
       state = state.copyWith(isStreaming: false);
     }
@@ -85,7 +90,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
         );
       }
     } catch (e) {
-      state = state.copyWith(error: e.toString());
+      state = state.copyWith(error: _redact(e.toString()));
     } finally {
       state = state.copyWith(isStreaming: false);
     }
