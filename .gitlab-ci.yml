@@ -10,6 +10,8 @@ variables:
 .setup_flutter: &setup_flutter
   before_script:
     - apt-get update -yqq && apt-get install -yqq curl xz-utils git
+    # Le SDK Flutter est un depot git : eviter l'erreur "dubious ownership"
+    - git config --global --add safe.directory '*'
     - curl -L -o /tmp/flutter.tar.xz "$FLUTTER_URL"
     - tar -xf /tmp/flutter.tar.xz -C /opt
     - export PATH="$PATH:/opt/flutter/bin"
@@ -50,6 +52,7 @@ build_linux:
   image: ubuntu:22.04
   before_script:
     - apt-get update -yqq && apt-get install -yqq curl xz-utils git clang cmake ninja-build libgtk-3-dev
+    - git config --global --add safe.directory '*'
     - curl -L -o /tmp/flutter.tar.xz "$FLUTTER_URL"
     - tar -xf /tmp/flutter.tar.xz -C /opt
     - export PATH="$PATH:/opt/flutter/bin"
