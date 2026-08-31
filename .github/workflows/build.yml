@@ -9,6 +9,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   analyze:
     name: Analyze
@@ -74,3 +78,32 @@ jobs:
         with:
           name: linux
           path: build/linux/x64/release/bundle
+
+  release:
+    name: GitHub Release (APK + Web)
+    needs: [build-android, build-web]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download Android APK
+        uses: actions/download-artifact@v4
+        with:
+          name: android-apk
+          path: artifacts/android
+      - name: Download Web
+        uses: actions/download-artifact@v4
+        with:
+          name: web
+          path: artifacts/web
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_id }}
+          name: Build #${{ github.run_number }}
+          files: |
+            artifacts/android/app-release.apk
+            artifacts/web/**
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
