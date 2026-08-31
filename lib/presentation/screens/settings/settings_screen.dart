@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:english_conversation_app/config/llm_providers.dart';
 import 'package:english_conversation_app/presentation/providers/providers.dart';
-import 'package:english_conversation_app/presentation/providers/settings_notifier.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -64,9 +63,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         padding: const EdgeInsets.all(16),
         child: ListView(
           children: [
-            DropdownButtonFormField<LlmProvider>(
+            DropdownButton<LlmProvider>(
               value: _provider,
-              decoration: const InputDecoration(labelText: 'Fournisseur'),
+              hint: const Text('Fournisseur'),
               items: kLlmProviders.entries
                   .map((e) => DropdownMenuItem(
                       value: e.key, child: Text(e.value.label)))
