@@ -2,6 +2,7 @@ import 'package:go_router/go_router.dart';
 import 'package:english_conversation_app/presentation/screens/onboarding/onboarding_screen.dart';
 import 'package:english_conversation_app/presentation/screens/home/home_screen.dart';
 import 'package:english_conversation_app/presentation/screens/conversation/conversation_screen.dart';
+import 'package:english_conversation_app/presentation/screens/settings/settings_screen.dart';
 
 /// Configuration centralisee des routes (GoRouter).
 final router = GoRouter(
@@ -18,6 +19,10 @@ final router = GoRouter(
     GoRoute(
       path: '/conversation',
       builder: (context, state) => const ConversationScreen(),
+    ),
+    GoRoute(
+      path: '/settings',
+      builder: (context, state) => const SettingsScreen(),
     ),
   ],
 );

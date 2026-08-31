@@ -5,97 +5,61 @@ import 'package:english_conversation_app/domain/entities/conversation_message.da
 import 'package:english_conversation_app/domain/entities/level.dart';
 import 'package:english_conversation_app/data/datasources/remote/llm_client.dart';
 
-/// Implementation Google Gemini (streaming SSE via alt=sse).
+/// Client Google AI Studio (Gemini).
 class GeminiClient implements LlmClient {
-  GeminiClient({required this.apiKey, this.model = 'gemini-1.5-flash'});
-
   final String apiKey;
+  final String baseUrl;
   final String model;
 
-  Map<String, Object> _body(
-    ConversationMessage systemPrompt,
-    List<ConversationMessage> history,
-    ConversationMessage userMessage,
-  ) {
-    final contents = <Map<String, Object>>[
-      for (final m in history)
-        {
-          'role': m.role == MessageRole.user ? 'user' : 'model',
-          'parts': [
-            {'text': m.content}
-          ],
-        },
-      {
-        'role': 'user',
-        'parts': [
-          {'text': userMessage.content}
-        ],
-      },
-    ];
-    return {
-      'contents': contents,
-      'systemInstruction': {
-        'parts': [
-          {'text': systemPrompt.content}
-        ]
-      },
-      'generationConfig': {'temperature': 0.7},
-    };
-  }
+  GeminiClient({
+    required this.apiKey,
+    this.baseUrl = 'https://generativelanguage.googleapis.com/v1beta',
+    this.model = 'gemini-2.0-flash',
+  });
 
   @override
-  Stream<String> streamChat({
-    required ConversationMessage systemPrompt,
-    required List<ConversationMessage> history,
-    required ConversationMessage userMessage,
-  }) async* {
-    final uri = Uri.parse(
-      'https://generativelanguage.googleapis.com/v1beta/models/$model'
-      ':streamGenerateContent?alt=sse&key=$apiKey',
-    );
+  Stream<String> streamChat(List<ConversationMessage> history) async* {
+    final contents = history
+        .map((m) => {
+              'role': m.role == MessageRole.user ? 'user' : 'model',
+              'parts': [
+                {'text': m.content}
+              ]
+            })
+        .toList();
 
+    final uri = Uri.parse(
+        '$baseUrl/models/$model:streamGenerateContent?alt=sse&key=$apiKey');
     final request = http.Request('POST', uri)
       ..headers['Content-Type'] = 'application/json'
-      ..body = jsonEncode(_body(systemPrompt, history, userMessage));
+      ..body = jsonEncode({'contents': contents});
 
     final response = await request.send();
     if (response.statusCode != 200) {
       final body = await response.stream.bytesToString();
       throw Exception('Gemini error ${response.statusCode}: $body');
     }
-
-    await for (final line in response.stream
-        .transform(utf8.decoder)
-        .transform(const LineSplitter())) {
+    await for (final line
+        in response.stream.transform(utf8.decoder).transform(const LineSplitter())) {
       if (!line.startsWith('data:')) continue;
       final data = line.substring(5).trim();
       if (data.isEmpty) continue;
-      try {
-        final json = jsonDecode(data) as Map<String, dynamic>;
-        final candidates = json['candidates'] as List?;
-        if (candidates == null || candidates.isEmpty) continue;
-        final parts = candidates[0]['content']?['parts'] as List?;
-        for (final p in parts ?? <dynamic>[]) {
-          final text = (p as Map)['text'] as String?;
-          if (text != null && text.isNotEmpty) yield text;
-        }
-      } catch (_) {
-        // Ignorer les lignes SSE partielles.
-      }
+      final json = jsonDecode(data) as Map<String, dynamic>;
+      final text = json['candidates']?[0]?['content']?['parts']?[0]?['text'];
+      if (text is String) yield text;
     }
   }
 
   @override
-  Future<String?> correctText(String userText, {required CefrLevel level}) async {
-    final prompt = 'You are an English teacher. Correct the following sentence '
-        'for a ${level.name.toUpperCase()} learner. Return ONLY the corrected '
-        'sentence, with no explanation or quotation marks.\n\n"$userText"';
-
-    final uri = Uri.parse(
-      'https://generativelanguage.googleapis.com/v1beta/models/$model'
-      ':generateContent?key=$apiKey',
-    );
-
+  Future<String?> correctText(String text, CefrLevel level) async {
+    final prompt = '''
+You are an English teacher. The student (CEFR level: ${level.label}) wrote:
+"$text"
+Correct the text if needed. Reply ONLY with strict JSON:
+{"has_error": true/false, "corrected": "<corrected text or empty if none>", "explanation": "<short explanation in English>"}
+''';
+    final uri =
+        Uri.parse('$baseUrl/models/$model:generateContent?key=$apiKey');
     final response = await http.post(
       uri,
       headers: {'Content-Type': 'application/json'},
@@ -107,16 +71,22 @@ class GeminiClient implements LlmClient {
               {'text': prompt}
             ]
           }
-        ],
-        'generationConfig': {'temperature': 0},
+        ]
       }),
     );
-    if (response.statusCode != 200) return null;
+    if (response.statusCode != 200) {
+      throw Exception('Gemini error ${response.statusCode}: ${response.body}');
+    }
     final json = jsonDecode(response.body) as Map<String, dynamic>;
-    final candidates = json['candidates'] as List?;
-    if (candidates == null || candidates.isEmpty) return null;
-    final parts = candidates[0]['content']?['parts'] as List?;
-    if (parts == null || parts.isEmpty) return null;
-    return (parts[0] as Map)['text'] as String?;
+    final content =
+        json['candidates']?[0]?['content']?['parts']?[0]?['text'] as String? ?? '';
+    try {
+      final parsed = jsonDecode(
+              content.replaceAll(RegExp(r'```json|```'), '').trim())
+          as Map<String, dynamic>;
+      return parsed['corrected'] as String?;
+    } catch (_) {
+      return null;
+    }
   }
 }

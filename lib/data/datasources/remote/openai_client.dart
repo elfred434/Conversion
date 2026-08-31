@@ -5,48 +5,37 @@ import 'package:english_conversation_app/domain/entities/conversation_message.da
 import 'package:english_conversation_app/domain/entities/level.dart';
 import 'package:english_conversation_app/data/datasources/remote/llm_client.dart';
 
-/// Implementation OpenAI Chat Completions (streaming SSE).
+/// Client compatible OpenAI (OpenAI, OpenRouter, Groq, Ollama, OVHcloud, HF...).
 class OpenAiClient implements LlmClient {
-  OpenAiClient({required this.apiKey, this.baseUrl = 'https://api.openai.com/v1'});
-
   final String apiKey;
   final String baseUrl;
-  final String model = 'gpt-4o-mini';
+  final String model;
 
-  List<Map<String, String>> _toMessages(
-    ConversationMessage systemPrompt,
-    List<ConversationMessage> history,
-    ConversationMessage userMessage,
-  ) {
-    return [
-      {'role': 'system', 'content': systemPrompt.content},
-      for (final m in history)
-        {
-          'role': m.role == MessageRole.user ? 'user' : 'assistant',
-          'content': m.content,
-        },
-      {'role': 'user', 'content': userMessage.content},
-    ];
-  }
+  OpenAiClient({
+    required this.apiKey,
+    this.baseUrl = 'https://api.openai.com/v1',
+    this.model = 'gpt-4o-mini',
+  });
 
   @override
-  Stream<String> streamChat({
-    required ConversationMessage systemPrompt,
-    required List<ConversationMessage> history,
-    required ConversationMessage userMessage,
-  }) async* {
-    final request = http.Request(
-      'POST',
-      Uri.parse('$baseUrl/chat/completions'),
-    )
+  Stream<String> streamChat(List<ConversationMessage> history) async* {
+    final messages = history
+        .map((m) => {
+              'role': m.role == MessageRole.assistant
+                  ? 'assistant'
+                  : (m.role == MessageRole.system ? 'system' : 'user'),
+              'content': m.content,
+            })
+        .toList();
+
+    final request = http.Request('POST', Uri.parse('$baseUrl/chat/completions'))
       ..headers['Authorization'] = 'Bearer $apiKey'
       ..headers['Content-Type'] = 'application/json'
       ..headers['Accept'] = 'text/event-stream'
       ..body = jsonEncode({
         'model': model,
-        'messages': _toMessages(systemPrompt, history, userMessage),
+        'messages': messages,
         'stream': true,
-        'temperature': 0.7,
       });
 
     final response = await request.send();
@@ -54,49 +43,53 @@ class OpenAiClient implements LlmClient {
       final body = await response.stream.bytesToString();
       throw Exception('OpenAI error ${response.statusCode}: $body');
     }
-
-    await for (final line in response.stream
-        .transform(utf8.decoder)
-        .transform(const LineSplitter())) {
+    await for (final line
+        in response.stream.transform(utf8.decoder).transform(const LineSplitter())) {
       if (!line.startsWith('data:')) continue;
       final data = line.substring(5).trim();
       if (data == '[DONE]') break;
-      try {
-        final json = jsonDecode(data) as Map<String, dynamic>;
-        final delta =
-            json['choices']?[0]?['delta']?['content'] as String?;
-        if (delta != null && delta.isNotEmpty) yield delta;
-      } catch (_) {
-        // Lignes SSE partielles ou keep-alive : on ignore.
-      }
+      final json = jsonDecode(data) as Map<String, dynamic>;
+      final delta = json['choices']?[0]?['delta']?['content'];
+      if (delta is String && delta.isNotEmpty) yield delta;
     }
   }
 
   @override
-  Future<String?> correctText(String userText, {required CefrLevel level}) async {
-    final prompt = 'You are an English teacher. Correct the following sentence '
-        'for a ${level.name.toUpperCase()} learner. Return ONLY the corrected '
-        'sentence, with no explanation or quotation marks.\n\n"$userText"';
-
-    final request = http.Request(
-      'POST',
+  Future<String?> correctText(String text, CefrLevel level) async {
+    final prompt = '''
+You are an English teacher. The student (CEFR level: ${level.label}) wrote:
+"$text"
+Correct the text if needed. Reply ONLY with strict JSON:
+{"has_error": true/false, "corrected": "<corrected text or empty if none>", "explanation": "<short explanation in English>"}
+''';
+    final response = await http.post(
       Uri.parse('$baseUrl/chat/completions'),
-    )
-      ..headers['Authorization'] = 'Bearer $apiKey'
-      ..headers['Content-Type'] = 'application/json'
-      ..body = jsonEncode({
+      headers: {
+        'Authorization': 'Bearer $apiKey',
+        'Content-Type': 'application/json'
+      },
+      body: jsonEncode({
         'model': model,
         'messages': [
-          {'role': 'system', 'content': prompt}
+          {'role': 'system', 'content': 'You are a helpful English teacher.'},
+          {'role': 'user', 'content': prompt}
         ],
-        'temperature': 0,
-      });
-
-    final response = await request.send();
-    if (response.statusCode != 200) return null;
-    final body = await response.stream.bytesToString();
-    final json = jsonDecode(body) as Map<String, dynamic>;
-    final text = json['choices']?[0]?['message']?['content'] as String?;
-    return text?.trim();
+        'temperature': 0.2,
+      }),
+    );
+    if (response.statusCode != 200) {
+      throw Exception('OpenAI error ${response.statusCode}: ${response.body}');
+    }
+    final json = jsonDecode(response.body) as Map<String, dynamic>;
+    final content =
+        json['choices']?[0]?['message']?['content'] as String? ?? '';
+    try {
+      final parsed = jsonDecode(
+              content.replaceAll(RegExp(r'```json|```'), '').trim())
+          as Map<String, dynamic>;
+      return parsed['corrected'] as String?;
+    } catch (_) {
+      return null;
+    }
   }
 }

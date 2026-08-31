@@ -31,6 +31,14 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
       context.go('/onboarding');
       return;
     }
+    if (ref.read(settingsNotifierProvider).apiKey.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('Ajoute ta clé API dans les paramètres pour démarrer.')),
+      );
+      context.push('/settings');
+      return;
+    }
     if (!_started) {
       _started = true;
       final scenarioId = ref.read(selectedScenarioProvider);
@@ -56,6 +64,13 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
   void _send() {
     final text = _controller.text;
     if (text.trim().isEmpty) return;
+    if (ref.read(settingsNotifierProvider).apiKey.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Ajoute ta clé API dans les paramètres.')),
+      );
+      context.push('/settings');
+      return;
+    }
     _controller.clear();
     ref.read(chatProvider.notifier).send(text);
   }

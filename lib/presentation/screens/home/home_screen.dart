@@ -18,7 +18,15 @@ class HomeScreen extends ConsumerWidget {
       builder: (context, snapshot) {
         final level = snapshot.data;
         return Scaffold(
-          appBar: AppBar(title: const Text('English Conversation')),
+          appBar: AppBar(
+            title: const Text('English Conversation'),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.settings),
+                onPressed: () => context.push('/settings'),
+              ),
+            ],
+          ),
           body: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
