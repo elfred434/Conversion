@@ -1,6 +1,9 @@
 analyzer:
   exclude:
     - build/**
+    - android/**
+    - web/**
+    - linux/**
 linter:
   rules:
     prefer_const_constructors: true

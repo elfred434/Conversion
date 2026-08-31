@@ -28,7 +28,24 @@ analyze:
 build_android:
   stage: build
   image: ubuntu:22.04
-  <<: *setup_flutter
+  before_script:
+    - apt-get update -yqq && apt-get install -yqq curl xz-utils git unzip openjdk-17-jdk
+    - git config --global --add safe.directory '*'
+    - curl -L -o /tmp/flutter.tar.xz "$FLUTTER_URL"
+    - tar -xf /tmp/flutter.tar.xz -C /opt
+    - export PATH="$PATH:/opt/flutter/bin"
+    - flutter --version
+    - flutter pub get
+    # Android SDK (requis pour flutter build apk)
+    - export ANDROID_HOME=/opt/android-sdk
+    - export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+    - export PATH="$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools"
+    - mkdir -p $ANDROID_HOME/cmdline-tools
+    - curl -L -o /tmp/cmdtools.zip https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
+    - unzip -q /tmp/cmdtools.zip -d $ANDROID_HOME/cmdline-tools
+    - mv $ANDROID_HOME/cmdline-tools/cmdline-tools $ANDROID_HOME/cmdline-tools/latest
+    - yes | sdkmanager --licenses
+    - sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
   script:
     - flutter build apk --release
   artifacts:
