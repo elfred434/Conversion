@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:english_conversation_app/domain/entities/level.dart';
 import 'package:english_conversation_app/domain/entities/scenario.dart';
-import 'package:english_conversation_app/domain/usecases/get_user_profile.dart';
 import 'package:english_conversation_app/presentation/providers/providers.dart';
 
 /// Ecran d'accueil : affiche le niveau et propose les scenarios.

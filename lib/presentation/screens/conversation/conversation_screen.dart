@@ -1,11 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:english_conversation_app/domain/entities/conversation_message.dart';
-import 'package:english_conversation_app/domain/entities/level.dart';
-import 'package:english_conversation_app/domain/usecases/get_user_profile.dart';
 import 'package:english_conversation_app/presentation/providers/providers.dart';
-import 'package:english_conversation_app/presentation/state/chat_notifier.dart';
 import 'package:english_conversation_app/presentation/widgets/message_bubble.dart';
 
 /// Ecran de conversation (chat avec streaming).

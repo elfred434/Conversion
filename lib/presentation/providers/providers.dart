@@ -13,6 +13,7 @@ import 'package:english_conversation_app/data/datasources/local/profile_local_da
 import 'package:english_conversation_app/data/repositories/conversation_repository_impl.dart';
 import 'package:english_conversation_app/data/repositories/user_repository_impl.dart';
 import 'package:english_conversation_app/presentation/state/chat_notifier.dart';
+import 'package:english_conversation_app/presentation/state/chat_state.dart';
 
 /// Client LLM selectionne selon la configuration (OpenAI ou Gemini).
 final llmClientProvider = Provider<LlmClient>((ref) {

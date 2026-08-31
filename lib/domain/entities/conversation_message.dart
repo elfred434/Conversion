@@ -14,7 +14,7 @@ class ConversationMessage {
   final String? correction;
   final bool isError;
 
-  const ConversationMessage({
+  ConversationMessage({
     required this.id,
     required this.role,
     required this.content,
