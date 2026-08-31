@@ -1,0 +1,28 @@
+name: english_conversation_app
+description: A conversational English-learning app built with Flutter (Mobile + Desktop).
+publish_to: 'none'
+version: 0.1.0+1
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+  flutter: ">=3.19.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  # State management
+  flutter_riverpod: ^2.4.9
+  # Routing
+  go_router: ^13.0.0
+  # Networking (LLM streaming)
+  http: ^1.1.0
+  # Local persistence (user level)
+  shared_preferences: ^2.2.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
