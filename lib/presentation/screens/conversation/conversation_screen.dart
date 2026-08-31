@@ -107,7 +107,7 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
     }
     setState(() => _isListening = true);
     await _speech.listen(
-      localeId: 'en_US',
+      listenOptions: SpeechListenOptions(localeId: 'en_US'),
       onResult: (result) {
         _controller.text = result.recognizedWords;
         if (result.finalResult && result.recognizedWords.trim().isNotEmpty) {
