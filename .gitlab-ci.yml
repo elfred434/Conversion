@@ -100,7 +100,7 @@ release:
     - glab release create "v$CI_PIPELINE_IID"
         ./build/app/outputs/flutter-apk/app-release.apk
         ./web.zip
-        --title "Build $CI_PIPELINE_IID"
+        -n "Build $CI_PIPELINE_IID"
         --notes "Release automatique (APK Android + Web)"
         -R "$CI_PROJECT_PATH"
   variables:
