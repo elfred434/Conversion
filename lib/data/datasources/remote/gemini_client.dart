@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:english_conversation_app/domain/entities/conversation_message.dart';
 import 'package:english_conversation_app/domain/entities/level.dart';
+import 'package:english_conversation_app/domain/entities/correction_result.dart';
 import 'package:english_conversation_app/data/datasources/remote/llm_client.dart';
 
 /// Client Google AI Studio (Gemini).
@@ -56,12 +57,13 @@ class GeminiClient implements LlmClient {
   }
 
   @override
-  Future<String?> correctText(String userText, {required CefrLevel level}) async {
+  Future<CorrectionResult?> correctText(String userText,
+      {required CefrLevel level}) async {
     final prompt = '''
 You are an English teacher. The student (CEFR level: ${level.label}) wrote:
 "$userText"
 Correct the text if needed. Reply ONLY with strict JSON:
-{"has_error": true/false, "corrected": "<corrected text or empty if none>", "explanation": "<short explanation in English>"}
+{"has_error": true/false, "corrected": "<corrected text or empty if none>", "explanation": "<short explanation in English>", "category": "<one of: article, preposition, tense, spelling, word_order, other, or empty if no error>"}
 ''';
     final uri =
         Uri.parse('$baseUrl/models/$model:generateContent?key=$apiKey');
@@ -89,7 +91,14 @@ Correct the text if needed. Reply ONLY with strict JSON:
       final parsed = jsonDecode(
               content.replaceAll(RegExp(r'```json|```'), '').trim())
           as Map<String, dynamic>;
-      return parsed['corrected'] as String?;
+      final hasError = parsed['has_error'] == true ||
+          (parsed['corrected'] is String &&
+              (parsed['corrected'] as String).isNotEmpty);
+      return CorrectionResult(
+        corrected: parsed['corrected'] as String?,
+        explanation: parsed['explanation'] as String?,
+        category: hasError ? (parsed['category'] as String? ?? 'other') : null,
+      );
     } catch (_) {
       return null;
     }

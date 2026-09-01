@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:english_conversation_app/domain/entities/conversation_message.dart';
 import 'package:english_conversation_app/domain/entities/level.dart';
+import 'package:english_conversation_app/domain/entities/correction_result.dart';
 
 /// Abstraction sur un fournisseur LLM externe.
 ///
@@ -17,5 +18,5 @@ abstract class LlmClient {
   });
 
   /// Corrige une phrase (peut renvoyer null en cas d'echec).
-  Future<String?> correctText(String userText, {required CefrLevel level});
+  Future<CorrectionResult?> correctText(String userText, {required CefrLevel level});
 }

@@ -65,6 +65,7 @@ class ConversationRepositoryImpl implements ConversationRepository {
   }
 
   @override
-  Future<String?> correctText(String userText, {required CefrLevel level}) =>
+  Future<CorrectionResult?> correctText(String userText,
+          {required CefrLevel level}) =>
       llmClient.correctText(userText, level: level);
 }

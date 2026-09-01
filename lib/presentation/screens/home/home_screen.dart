@@ -69,6 +69,18 @@ class HomeScreen extends ConsumerWidget {
                   icon: const Icon(Icons.chat),
                   label: const Text('Conversation libre'),
                 ),
+                const SizedBox(height: 12),
+                FilledButton.icon(
+                  onPressed: () => context.push('/pronunciation'),
+                  icon: const Icon(Icons.record_voice_over),
+                  label: const Text('Pratiquer la prononciation'),
+                ),
+                const SizedBox(height: 8),
+                OutlinedButton.icon(
+                  onPressed: () => context.push('/progress'),
+                  icon: const Icon(Icons.emoji_events),
+                  label: const Text('Ma progression'),
+                ),
               ],
             ),
           ),

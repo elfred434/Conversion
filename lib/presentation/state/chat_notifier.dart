@@ -4,21 +4,29 @@ import 'package:english_conversation_app/domain/entities/conversation_message.da
 import 'package:english_conversation_app/domain/entities/level.dart';
 import 'package:english_conversation_app/domain/entities/scenario.dart';
 import 'package:english_conversation_app/domain/entities/conversation_session.dart';
+import 'package:english_conversation_app/domain/entities/correction_result.dart';
 import 'package:english_conversation_app/domain/usecases/start_conversation.dart';
 import 'package:english_conversation_app/domain/usecases/send_message.dart';
 import 'package:english_conversation_app/domain/usecases/correct_text.dart';
 import 'package:english_conversation_app/domain/repositories/history_repository.dart';
+import 'package:english_conversation_app/domain/repositories/progress_repository.dart';
 import 'package:english_conversation_app/presentation/state/chat_state.dart';
 
 /// Orchestre la conversation : streaming, historique et corrections.
 class ChatNotifier extends StateNotifier<ChatState> {
-  ChatNotifier(this._start, this._send, this._correct, this._history)
-      : super(const ChatState());
+  ChatNotifier(
+    this._start,
+    this._send,
+    this._correct,
+    this._history,
+    this._progress,
+  ) : super(const ChatState());
 
   final StartConversation _start;
   final SendMessage _send;
   final CorrectText _correct;
   final HistoryRepository _history;
+  final ProgressRepository _progress;
 
   CefrLevel? _level;
   String? _scenarioId;
@@ -156,7 +164,8 @@ class ChatNotifier extends StateNotifier<ChatState> {
           if (m.id == id) m.copyWith(content: content) else m,
       ];
 
-  /// Corrige la phrase de l'utilisateur (best-effort, non bloquant).
+  /// Corrige la phrase de l'utilisateur (best-effort, non bloquant) et
+  /// enregistre le type d'erreur pour le suivi de progression.
   void _applyCorrection(String messageId, String userText) async {
     if (_level == null) return;
     // Mode "ecoute" (ex: Raconte ta journee) : pas de correction.
@@ -169,17 +178,20 @@ class ChatNotifier extends StateNotifier<ChatState> {
     }
     if (scenario != null && !scenario.correct) return;
     try {
-      final corrected = await _correct(userText: userText, level: _level!);
-      if (corrected == null) return;
+      final result = await _correct(userText: userText, level: _level!);
+      if (result?.corrected == null || result!.corrected!.isEmpty) return;
       state = state.copyWith(
         messages: [
           for (final m in state.messages)
             if (m.id == messageId)
-              m.copyWith(correction: corrected)
+              m.copyWith(correction: result.corrected)
             else
               m,
         ],
       );
+      if (result.category != null) {
+        await _progress.recordCorrection(result.category!);
+      }
     } catch (_) {
       // Erreur de correction non bloquante.
     }
