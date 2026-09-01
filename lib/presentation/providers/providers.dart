@@ -16,6 +16,8 @@ import 'package:english_conversation_app/data/repositories/conversation_reposito
 import 'package:english_conversation_app/data/repositories/user_repository_impl.dart';
 import 'package:english_conversation_app/data/repositories/settings_repository_impl.dart';
 import 'package:english_conversation_app/domain/repositories/settings_repository.dart';
+import 'package:english_conversation_app/domain/repositories/history_repository.dart';
+import 'package:english_conversation_app/data/repositories/history_repository_impl.dart';
 import 'package:english_conversation_app/presentation/state/chat_notifier.dart';
 import 'package:english_conversation_app/presentation/state/chat_state.dart';
 import 'package:english_conversation_app/presentation/providers/settings_notifier.dart';
@@ -40,6 +42,9 @@ LlmClient _buildClient(AppSettings s) {
 
 final settingsRepositoryProvider = Provider<SettingsRepository>(
     (ref) => SettingsRepositoryImpl(SettingsLocalDataSource()));
+
+final historyRepositoryProvider = Provider<HistoryRepository>(
+    (ref) => HistoryRepositoryImpl());
 
 final settingsNotifierProvider =
     StateNotifierProvider<SettingsNotifier, AppSettings>(
@@ -74,4 +79,5 @@ final chatProvider =
           ref.watch(startConversationProvider),
           ref.watch(sendMessageProvider),
           ref.watch(correctTextProvider),
+          ref.watch(historyRepositoryProvider),
         ));

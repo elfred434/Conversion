@@ -14,6 +14,7 @@ class SettingsLocalDataSource {
       provider: provider,
       apiKey: prefs.getString('llm_api_key') ?? '',
       model: prefs.getString('llm_model') ?? '',
+      autoSpeak: prefs.getBool('auto_speak') ?? false,
     );
   }
 
@@ -22,5 +23,6 @@ class SettingsLocalDataSource {
     await prefs.setString('llm_provider', s.provider.name);
     await prefs.setString('llm_api_key', s.apiKey);
     await prefs.setString('llm_model', s.model);
+    await prefs.setBool('auto_speak', s.autoSpeak);
   }
 }

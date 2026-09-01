@@ -7,11 +7,17 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
   final SettingsRepository _repository;
   SettingsNotifier(this._repository) : super(const AppSettings());
 
-  void update({LlmProvider? provider, String? apiKey, String? model}) {
+  void update({
+    LlmProvider? provider,
+    String? apiKey,
+    String? model,
+    bool? autoSpeak,
+  }) {
     state = state.copyWith(
       provider: provider,
       apiKey: apiKey,
       model: model,
+      autoSpeak: autoSpeak,
     );
   }
 

@@ -12,6 +12,7 @@ class SettingsScreen extends ConsumerStatefulWidget {
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   late LlmProvider _provider;
+  bool _autoSpeak = false;
   final _keyCtrl = TextEditingController();
   final _modelCtrl = TextEditingController();
 
@@ -20,6 +21,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     super.initState();
     final s = ref.read(settingsNotifierProvider);
     _provider = s.provider;
+    _autoSpeak = s.autoSpeak;
     _keyCtrl.text = s.apiKey;
     _modelCtrl.text =
         s.model.isNotEmpty ? s.model : kLlmProviders[_provider]!.defaultModel;
@@ -45,6 +47,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           provider: _provider,
           apiKey: _keyCtrl.text.trim(),
           model: _modelCtrl.text.trim(),
+          autoSpeak: _autoSpeak,
         );
     await ref.read(settingsNotifierProvider.notifier).save();
     if (mounted) {
@@ -90,11 +93,30 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               Text(meta.hint,
                   style: Theme.of(context).textTheme.bodySmall),
             ],
+            SwitchListTile(
+              title: const Text('Lecture automatique (TTS)'),
+              subtitle: const Text('Le tuteur lit ses reponses a voix haute'),
+              value: _autoSpeak,
+              onChanged: (v) => setState(() => _autoSpeak = v),
+            ),
             const SizedBox(height: 24),
             FilledButton.icon(
               onPressed: _save,
               icon: const Icon(Icons.save),
               label: const Text('Enregistrer'),
+            ),
+            const SizedBox(height: 16),
+            TextButton.icon(
+              onPressed: () async {
+                await ref.read(historyRepositoryProvider).clearAll();
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Historique efface')),
+                  );
+                }
+              },
+              icon: const Icon(Icons.delete_outline),
+              label: const Text('Effacer l\'historique'),
             ),
             const SizedBox(height: 16),
             const Text(

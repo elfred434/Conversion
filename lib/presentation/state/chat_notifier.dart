@@ -5,33 +5,41 @@ import 'package:english_conversation_app/domain/entities/level.dart';
 import 'package:english_conversation_app/domain/usecases/start_conversation.dart';
 import 'package:english_conversation_app/domain/usecases/send_message.dart';
 import 'package:english_conversation_app/domain/usecases/correct_text.dart';
+import 'package:english_conversation_app/domain/repositories/history_repository.dart';
 import 'package:english_conversation_app/presentation/state/chat_state.dart';
 
 /// Orchestre la conversation : streaming, historique et corrections.
 class ChatNotifier extends StateNotifier<ChatState> {
-  ChatNotifier(this._start, this._send, this._correct)
+  ChatNotifier(this._start, this._send, this._correct, this._history)
       : super(const ChatState());
 
   final StartConversation _start;
   final SendMessage _send;
   final CorrectText _correct;
+  final HistoryRepository _history;
 
   CefrLevel? _level;
   String? _scenarioId;
   int _counter = 0;
 
-  String _newId() =>
-      'm${_counter++}_${DateTime.now().microsecondsSinceEpoch}';
+  String _newId() => 'm${_counter++}_${DateTime.now().microsecondsSinceEpoch}';
+  String get _historyKey => _scenarioId ?? 'free';
 
   /// Reduit les infos sensibles (cle API) des messages d'erreur affiches a l'utilisateur.
-  String _redact(String message) {
-    return message.replaceAll(RegExp(r'key=[^&\s"]+'), 'key=***');
-  }
+  String _redact(String message) =>
+      message.replaceAll(RegExp(r'key=[^&\s"]+'), 'key=***');
 
-  /// Demarre une nouvelle conversation.
+  /// Demarre une nouvelle conversation (ou restaure l'historique existant).
   Future<void> start({required CefrLevel level, String? scenarioId}) async {
     _level = level;
     _scenarioId = scenarioId;
+
+    final saved = await _history.load(_historyKey);
+    if (saved.isNotEmpty) {
+      state = ChatState(messages: saved);
+      return;
+    }
+
     state = ChatState(
       messages: [ConversationMessage.assistant('', id: _newId())],
       isStreaming: true,
@@ -42,14 +50,13 @@ class ChatNotifier extends StateNotifier<ChatState> {
       await for (final chunk
           in _start(level: level, scenarioId: scenarioId)) {
         buffer.write(chunk);
-        state = state.copyWith(
-          messages: _updateAssistant(buffer.toString()),
-        );
+        state = state.copyWith(messages: _updateAssistant(buffer.toString()));
       }
     } catch (e) {
       state = state.copyWith(error: _redact(e.toString()));
     } finally {
       state = state.copyWith(isStreaming: false);
+      _persist();
     }
   }
 
@@ -93,9 +100,14 @@ class ChatNotifier extends StateNotifier<ChatState> {
       state = state.copyWith(error: _redact(e.toString()));
     } finally {
       state = state.copyWith(isStreaming: false);
+      _persist();
     }
 
     _applyCorrection(userMsg.id, trimmed);
+  }
+
+  void _persist() {
+    _history.save(_historyKey, state.messages);
   }
 
   List<ConversationMessage> _updateAssistant(String content) {

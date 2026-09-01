@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:english_conversation_app/presentation/providers/providers.dart';
+import 'package:english_conversation_app/domain/entities/conversation_message.dart';
+import 'package:english_conversation_app/presentation/providers/tts_provider.dart';
 import 'package:english_conversation_app/presentation/widgets/message_bubble.dart';
 
 /// Ecran de conversation (chat avec streaming).
@@ -122,11 +124,33 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(chatProvider);
+    final autoSpeak = ref.watch(settingsNotifierProvider).autoSpeak;
 
     // Auto-scroll quand le nombre de messages change.
     ref.listen(chatProvider, (previous, next) {
       if (previous?.messages.length != next.messages.length) {
         _scrollToBottom();
+      }
+    });
+
+    // Lecture automatique des reponses du tuteur (TTS) a la fin du streaming.
+    ref.listen(chatProvider, (previous, next) {
+      final prevStreaming = previous?.isStreaming ?? false;
+      if (prevStreaming && !next.isStreaming) {
+        ConversationMessage? last;
+        for (final m in next.messages.reversed) {
+          if (m.role == MessageRole.assistant && !m.isError) {
+            last = m;
+            break;
+          }
+        }
+        if (last != null &&
+            last.content.isNotEmpty &&
+            ref.read(settingsNotifierProvider).autoSpeak) {
+          final tts = ref.read(flutterTtsProvider);
+          tts.setLanguage('en-US');
+          tts.speak(last.content);
+        }
       }
     });
 
@@ -137,6 +161,17 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.go('/home'),
         ),
+        actions: [
+          IconButton(
+            icon: Icon(autoSpeak ? Icons.volume_up : Icons.volume_off),
+            tooltip: 'Lecture auto',
+            onPressed: () {
+              final cur = ref.read(settingsNotifierProvider).autoSpeak;
+              ref.read(settingsNotifierProvider.notifier).update(autoSpeak: !cur);
+              ref.read(settingsNotifierProvider.notifier).save();
+            },
+          ),
+        ],
       ),
       body: Column(
         children: [

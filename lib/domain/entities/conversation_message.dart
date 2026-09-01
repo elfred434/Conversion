@@ -56,4 +56,28 @@ class ConversationMessage {
         isError: isError ?? this.isError,
         createdAt: createdAt,
       );
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'role': role.name,
+        'content': content,
+        'correction': correction,
+        'isError': isError,
+        'createdAt': createdAt.toIso8601String(),
+      };
+
+  factory ConversationMessage.fromJson(Map<String, dynamic> json) =>
+      ConversationMessage(
+        id: json['id'] as String,
+        role: MessageRole.values.firstWhere(
+          (e) => e.name == json['role'],
+          orElse: () => MessageRole.user,
+        ),
+        content: json['content'] as String,
+        correction: json['correction'] as String?,
+        isError: json['isError'] as bool? ?? false,
+        createdAt: json['createdAt'] != null
+            ? DateTime.parse(json['createdAt'] as String)
+            : null,
+      );
 }
