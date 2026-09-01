@@ -20,12 +20,14 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
     String? apiKey,
     String? model,
     bool? autoSpeak,
+    String? baseUrl,
   }) {
     state = state.copyWith(
       provider: provider,
       apiKey: apiKey,
       model: model,
       autoSpeak: autoSpeak,
+      baseUrl: baseUrl,
     );
   }
 

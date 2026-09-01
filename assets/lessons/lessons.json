@@ -1,0 +1,36 @@
+[
+  {
+    "id": "daily",
+    "title": "La vie quotidienne",
+    "description": "Phrases utiles tous les jours.",
+    "phrases": [
+      {"en": "Could you pass me the salt, please?", "fr": "Peux-tu me passer le sel, s'il te plait ?"},
+      {"en": "I'm going to the grocery store after work.", "fr": "Je vais a l'epicerie apres le travail."},
+      {"en": "What time does the bus usually leave?", "fr": "A quelle heure le bus part-il generalement ?"},
+      {"en": "I'd like a coffee with milk, thanks.", "fr": "Je voudrais un cafe au lait, merci."},
+      {"en": "Can you tell me how to get to the station?", "fr": "Peux-tu m'indiquer le chemin de la gare ?"}
+    ]
+  },
+  {
+    "id": "travel",
+    "title": "Voyager",
+    "description": "A l'aeroport et en deplacement.",
+    "phrases": [
+      {"en": "Where is the nearest subway station?", "fr": "Ou est la station de metro la plus proche ?"},
+      {"en": "I'd like to book a one-way ticket to Paris.", "fr": "Je voudrais reserver un billet simple pour Paris."},
+      {"en": "Is breakfast included in the price?", "fr": "Le petit-dejeuner est-il inclus dans le prix ?"},
+      {"en": "Could you call me a taxi, please?", "fr": "Pourriez-vous m'appeler un taxi, s'il vous plait ?"}
+    ]
+  },
+  {
+    "id": "smalltalk",
+    "title": "Small talk",
+    "description": "Bavarder en anglais.",
+    "phrases": [
+      {"en": "How was your weekend?", "fr": "Comment s'est passee ta fin de semaine ?"},
+      {"en": "What do you like to do in your free time?", "fr": "Que aimes-tu faire pendant ton temps libre ?"},
+      {"en": "The weather is lovely today, isn't it?", "fr": "Il fait un temps magnifique aujourd'hui, n'est-ce pas ?"},
+      {"en": "I really enjoy cooking with friends.", "fr": "J'aime beaucoup cuisiner avec des amis."}
+    ]
+  }
+]

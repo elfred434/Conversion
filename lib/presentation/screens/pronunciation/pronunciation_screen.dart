@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:english_conversation_app/domain/entities/pronunciation_score.dart';
+import 'package:english_conversation_app/presentation/providers/providers.dart';
 import 'package:english_conversation_app/presentation/providers/tts_provider.dart';
 
 /// Ecran de pratique de la prononciation :
@@ -28,6 +29,16 @@ class _PronunciationScreenState extends ConsumerState<PronunciationScreen> {
   List<PronWord> _words = [];
   bool _isListening = false;
   bool _done = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final practice = ref.read(practicePhraseProvider);
+    if (practice != null && practice.isNotEmpty) {
+      _target = practice;
+      ref.read(practicePhraseProvider.notifier).state = null;
+    }
+  }
 
   void _setTarget(String t) {
     setState(() {

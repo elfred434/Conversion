@@ -81,6 +81,12 @@ class HomeScreen extends ConsumerWidget {
                   icon: const Icon(Icons.emoji_events),
                   label: const Text('Ma progression'),
                 ),
+                const SizedBox(height: 8),
+                OutlinedButton.icon(
+                  onPressed: () => context.push('/lessons'),
+                  icon: const Icon(Icons.menu_book),
+                  label: const Text('Lecons (hors-ligne)'),
+                ),
               ],
             ),
           ),

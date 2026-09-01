@@ -21,6 +21,8 @@ import 'package:english_conversation_app/domain/repositories/history_repository.
 import 'package:english_conversation_app/data/repositories/history_repository_impl.dart';
 import 'package:english_conversation_app/domain/repositories/progress_repository.dart';
 import 'package:english_conversation_app/data/repositories/progress_repository_impl.dart';
+import 'package:english_conversation_app/domain/entities/lesson.dart';
+import 'package:english_conversation_app/data/repositories/lesson_repository.dart';
 import 'package:english_conversation_app/presentation/state/chat_notifier.dart';
 import 'package:english_conversation_app/presentation/state/chat_state.dart';
 import 'package:english_conversation_app/presentation/providers/settings_notifier.dart';
@@ -29,16 +31,17 @@ import 'package:english_conversation_app/presentation/providers/settings_notifie
 LlmClient _buildClient(AppSettings s) {
   final meta = kLlmProviders[s.provider]!;
   final model = s.model.isNotEmpty ? s.model : meta.defaultModel;
+  final baseUrl = s.baseUrl.isNotEmpty ? s.baseUrl : meta.defaultBaseUrl;
   if (meta.isGemini) {
     return GeminiClient(
       apiKey: s.apiKey,
-      baseUrl: meta.defaultBaseUrl,
+      baseUrl: baseUrl,
       model: model,
     );
   }
   return OpenAiClient(
     apiKey: s.apiKey,
-    baseUrl: meta.defaultBaseUrl,
+    baseUrl: baseUrl,
     model: model,
   );
 }
@@ -87,6 +90,12 @@ final selectedSessionProvider = StateProvider<String?>((ref) => null);
 
 final sessionsProvider = FutureProvider<List<ConversationSession>>(
     (ref) => ref.watch(historyRepositoryProvider).listSessions());
+
+final lessonRepositoryProvider =
+    Provider<LessonRepository>((ref) => LessonRepository());
+final lessonsProvider = FutureProvider<List<Lesson>>(
+    (ref) => ref.watch(lessonRepositoryProvider).loadLessons());
+final practicePhraseProvider = StateProvider<String?>((ref) => null);
 
 final chatProvider =
     StateNotifierProvider<ChatNotifier, ChatState>((ref) => ChatNotifier(

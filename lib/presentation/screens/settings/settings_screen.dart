@@ -15,6 +15,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _autoSpeak = false;
   final _keyCtrl = TextEditingController();
   final _modelCtrl = TextEditingController();
+  final _baseCtrl = TextEditingController();
 
   @override
   void initState() {
@@ -25,12 +26,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     _keyCtrl.text = s.apiKey;
     _modelCtrl.text =
         s.model.isNotEmpty ? s.model : kLlmProviders[_provider]!.defaultModel;
+    _baseCtrl.text = s.baseUrl;
   }
 
   @override
   void dispose() {
     _keyCtrl.dispose();
     _modelCtrl.dispose();
+    _baseCtrl.dispose();
     super.dispose();
   }
 
@@ -48,6 +51,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           apiKey: _keyCtrl.text.trim(),
           model: _modelCtrl.text.trim(),
           autoSpeak: _autoSpeak,
+          baseUrl: _baseCtrl.text.trim(),
         );
     await ref.read(settingsNotifierProvider.notifier).save();
     if (mounted) {
@@ -60,6 +64,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final meta = kLlmProviders[_provider]!;
+    final isLocal = _provider == LlmProvider.ollama;
     return Scaffold(
       appBar: AppBar(title: const Text('Parametres LLM')),
       body: Padding(
@@ -76,23 +81,43 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               onChanged: _onProviderChanged,
             ),
             const SizedBox(height: 16),
-            TextField(
-              controller: _keyCtrl,
-              decoration: const InputDecoration(
-                  labelText: 'Cle API', hintText: 'sk-... / AIza...'),
-              obscureText: true,
-            ),
-            const SizedBox(height: 16),
+            if (!isLocal)
+              TextField(
+                controller: _keyCtrl,
+                decoration: const InputDecoration(
+                    labelText: 'Cle API', hintText: 'sk-... / AIza...'),
+                obscureText: true,
+              ),
+            if (!isLocal) const SizedBox(height: 16),
+            if (isLocal)
+              TextField(
+                controller: _baseCtrl,
+                decoration: const InputDecoration(
+                  labelText: 'URL Ollama',
+                  hintText: 'http://192.168.1.20:11434/v1',
+                ),
+              ),
+            if (isLocal) const SizedBox(height: 16),
             TextField(
               controller: _modelCtrl,
-              decoration: const InputDecoration(
-                  labelText: 'Modele', hintText: 'ex: gpt-4o-mini'),
+              decoration: InputDecoration(
+                  labelText: 'Modele', hintText: 'ex: ${meta.defaultModel}'),
             ),
-            if (meta.hint.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Text(meta.hint,
-                  style: Theme.of(context).textTheme.bodySmall),
-            ],
+            if (isLocal)
+              const Padding(
+                padding: EdgeInsets.only(top: 8),
+                child: Text(
+                  'Demarre Ollama sur ta machine (ollama serve) et pull un petit '
+                  'modele, ex: ollama pull gemma2:2b. Aucune cle, tout reste en local.',
+                  style: TextStyle(fontSize: 12),
+                ),
+              )
+            else if (meta.hint.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Text(meta.hint,
+                    style: Theme.of(context).textTheme.bodySmall),
+              ),
             SwitchListTile(
               title: const Text('Lecture automatique (TTS)'),
               subtitle: const Text('Le tuteur lit ses reponses a voix haute'),
@@ -120,8 +145,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
             const SizedBox(height: 16),
             const Text(
-              'Clee gratuite sur OpenRouter, Google AI Studio (Gemini), Groq, ou '
-              'auto-heberge Ollama. La cle reste stockee localement sur l’appareil.',
+              'Sans cle : Ollama (local, modele en fichier). Avec cle : OpenAI, '
+              'OpenRouter, Google AI Studio (Gemini), Groq... La cle reste stockee localement.',
               style: TextStyle(fontSize: 12),
             ),
           ],
