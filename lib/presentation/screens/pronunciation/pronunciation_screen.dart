@@ -7,10 +7,9 @@ import 'package:english_conversation_app/domain/entities/pronunciation_score.dar
 import 'package:english_conversation_app/presentation/providers/tts_provider.dart';
 
 /// Ecran de pratique de la prononciation :
-/// 1) l'utilisateur ECOUTE la phrase (TTS), 2) il la REPETE (micro/STT),
-/// 3) on note la ressemblance (scoring de similarite mot-a-mot).
-/// Note : le vrai scoring phonetique (Azure) necessite une capture audio
-/// native ; en attendant, on utilise la similarite de transcription.
+/// - l'utilisateur peut saisir SA phrase et l'ecouter (TTS) pour en capter la prononciation,
+/// - ou choisir une phrase du quotidien,
+/// - puis il la REPETE (micro/STT) et on note la ressemblance.
 class PronunciationScreen extends ConsumerStatefulWidget {
   const PronunciationScreen({super.key});
   @override
@@ -21,17 +20,18 @@ class PronunciationScreen extends ConsumerStatefulWidget {
 class _PronunciationScreenState extends ConsumerState<PronunciationScreen> {
   final SpeechToText _speech = SpeechToText();
   final Random _rng = Random();
+  final _freeCtrl = TextEditingController();
 
-  String _target = kPracticePhrases[0];
+  String _target = kDailyPhrases[0];
   String _transcript = '';
   double _score = 0;
   List<PronWord> _words = [];
   bool _isListening = false;
   bool _done = false;
 
-  void _nextPhrase() {
+  void _setTarget(String t) {
     setState(() {
-      _target = kPracticePhrases[_rng.nextInt(kPracticePhrases.length)];
+      _target = t;
       _transcript = '';
       _score = 0;
       _words = [];
@@ -39,10 +39,20 @@ class _PronunciationScreenState extends ConsumerState<PronunciationScreen> {
     });
   }
 
-  Future<void> _listenPhrase() async {
+  Future<void> _listenTarget() async {
     final tts = ref.read(flutterTtsProvider);
     await tts.setLanguage('en-US');
     await tts.speak(_target);
+  }
+
+  /// Lit a voix haute la phrase saisie par l'utilisateur (et la prend comme cible).
+  Future<void> _readMine() async {
+    final text = _freeCtrl.text.trim();
+    if (text.isEmpty) return;
+    _setTarget(text);
+    final tts = ref.read(flutterTtsProvider);
+    await tts.setLanguage('en-US');
+    await tts.speak(text);
   }
 
   Future<void> _toggleListen() async {
@@ -54,8 +64,8 @@ class _PronunciationScreenState extends ConsumerState<PronunciationScreen> {
     final status = await Permission.microphone.request();
     if (!status.isGranted) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Autorise le micro.')));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('Autorise le micro.')));
       }
       return;
     }
@@ -63,8 +73,8 @@ class _PronunciationScreenState extends ConsumerState<PronunciationScreen> {
         onError: (e) => debugPrint('speech error: $e'));
     if (!available) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Reconnaissance vocale indisponible.')));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('Reconnaissance vocale indisponible.')));
       }
       return;
     }
@@ -92,29 +102,66 @@ class _PronunciationScreenState extends ConsumerState<PronunciationScreen> {
   }
 
   @override
+  void dispose() {
+    _freeCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Prononciation')),
       body: Padding(
         padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: ListView(
           children: [
-            const Text('1) Ecoute la phrase, 2) répète-la à voix haute :',
-                style: TextStyle(fontSize: 16)),
-            const SizedBox(height: 12),
+            const Text('Ta phrase (optionnel)',
+                style: TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _freeCtrl,
+                    decoration: const InputDecoration(
+                        hintText: 'Ecris une phrase en anglais…'),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.volume_up),
+                  tooltip: 'Lire ma phrase',
+                  onPressed: _readMine,
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            const Text('Phrases du quotidien',
+                style: TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: kDailyPhrases
+                  .map((p) => ActionChip(
+                        label: Text(p),
+                        onPressed: () => _setTarget(p),
+                      ))
+                  .toList(),
+            ),
+            const SizedBox(height: 16),
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Row(
                   children: [
                     Expanded(
-                      child: Text(_target, style: const TextStyle(fontSize: 20)),
+                      child: Text(_target,
+                          style: const TextStyle(fontSize: 20)),
                     ),
                     IconButton(
                       icon: const Icon(Icons.volume_up),
                       tooltip: 'Ecouter',
-                      onPressed: _listenPhrase,
+                      onPressed: _listenTarget,
                     ),
                   ],
                 ),
@@ -143,11 +190,16 @@ class _PronunciationScreenState extends ConsumerState<PronunciationScreen> {
                     spacing: 6,
                     runSpacing: 6,
                     children: _words
-                        .map((w) => Text(w.word,
-                            style: TextStyle(
+                        .map((w) => Text(
+                              w.word,
+                              style: TextStyle(
                                 fontSize: 18,
-                                color: w.matched ? Colors.green : Colors.red,
-                                fontWeight: FontWeight.w600)))
+                                color: w.matched
+                                    ? Colors.green
+                                    : Colors.red,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ))
                         .toList(),
                   ),
                 ],
@@ -163,7 +215,8 @@ class _PronunciationScreenState extends ConsumerState<PronunciationScreen> {
                 ),
                 const SizedBox(width: 16),
                 OutlinedButton.icon(
-                  onPressed: _nextPhrase,
+                  onPressed: () =>
+                      _setTarget(kDailyPhrases[_rng.nextInt(kDailyPhrases.length)]),
                   icon: const Icon(Icons.skip_next),
                   label: const Text('Phrase suivante'),
                 ),

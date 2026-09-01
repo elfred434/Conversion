@@ -15,8 +15,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _autoSpeak = false;
   final _keyCtrl = TextEditingController();
   final _modelCtrl = TextEditingController();
-  final _azureKeyCtrl = TextEditingController();
-  final _azureRegionCtrl = TextEditingController();
 
   @override
   void initState() {
@@ -25,17 +23,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     _provider = s.provider;
     _autoSpeak = s.autoSpeak;
     _keyCtrl.text = s.apiKey;
-    _modelCtrl.text = s.model.isNotEmpty ? s.model : kLlmProviders[_provider]!.defaultModel;
-    _azureKeyCtrl.text = s.azureKey;
-    _azureRegionCtrl.text = s.azureRegion;
+    _modelCtrl.text =
+        s.model.isNotEmpty ? s.model : kLlmProviders[_provider]!.defaultModel;
   }
 
   @override
   void dispose() {
     _keyCtrl.dispose();
     _modelCtrl.dispose();
-    _azureKeyCtrl.dispose();
-    _azureRegionCtrl.dispose();
     super.dispose();
   }
 
@@ -53,8 +48,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           apiKey: _keyCtrl.text.trim(),
           model: _modelCtrl.text.trim(),
           autoSpeak: _autoSpeak,
-          azureKey: _azureKeyCtrl.text.trim(),
-          azureRegion: _azureRegionCtrl.text.trim(),
         );
     await ref.read(settingsNotifierProvider.notifier).save();
     if (mounted) {
@@ -107,22 +100,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               onChanged: (v) => setState(() => _autoSpeak = v),
             ),
             const Divider(height: 24),
-            const Text('Evaluation phonetique (Azure Speech)',
-                style: TextStyle(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _azureKeyCtrl,
-              decoration:
-                  const InputDecoration(labelText: 'Cle Azure Speech'),
-              obscureText: true,
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _azureRegionCtrl,
-              decoration: const InputDecoration(
-                  labelText: 'Region Azure', hintText: 'ex: westeurope'),
-            ),
-            const SizedBox(height: 24),
             FilledButton.icon(
               onPressed: _save,
               icon: const Icon(Icons.save),
@@ -144,9 +121,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             const SizedBox(height: 16),
             const Text(
               'Clee gratuite sur OpenRouter, Google AI Studio (Gemini), Groq, ou '
-              'auto-heberge Ollama. La cle reste stockee localement sur l’appareil. '
-              'Pour le scoring phonetique, cree une ressource Speech sur Azure '
-              '(niveau gratuit) et renseigne sa cle et sa region.',
+              'auto-heberge Ollama. La cle reste stockee localement sur l’appareil.',
               style: TextStyle(fontSize: 12),
             ),
           ],

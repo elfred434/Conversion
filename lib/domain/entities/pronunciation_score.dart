@@ -7,16 +7,18 @@ class PronWord {
   const PronWord(this.word, this.matched);
 }
 
-/// Phrases d'entrainement a la prononciation (banque locale, sans API).
-const List<String> kPracticePhrases = [
-  "Hello, my name is Alex and I am happy to meet you.",
-  "I would like a cup of coffee, please.",
-  "Where is the train station near here?",
-  "She has been working here since last year.",
-  "Could you please tell me how to get to the museum?",
-  "We were watching a movie when the power went out.",
-  "If I had more time, I would learn to play the guitar.",
-  "The book on the table belongs to my brother.",
+/// Phrases du quotidien pour la pratique de la prononciation.
+const List<String> kDailyPhrases = [
+  "Could you pass me the salt, please?",
+  "I'm going to the grocery store after work.",
+  "What time does the bus usually leave?",
+  "I'd like a coffee with milk, thanks.",
+  "Can you tell me how to get to the station?",
+  "I forgot my umbrella at home today.",
+  "We are having dinner at seven this evening.",
+  "She called me as soon as she arrived.",
+  "Do you want to watch a movie tonight?",
+  "I need to wake up early tomorrow morning.",
 ];
 
 String _normalize(String s) => s
