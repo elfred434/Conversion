@@ -46,12 +46,17 @@ extension CefrLevelX on CefrLevel {
 }
 
 /// Construit le system prompt envoye au LLM en fonction du niveau et
-/// eventuellement d'un scenario.
-String buildSystemPrompt(CefrLevel level, {String? scenarioPrompt}) {
+/// eventuellement d'un scenario. [correct] active la correction grammaticale.
+String buildSystemPrompt(CefrLevel level, {String? scenarioPrompt, bool correct = true}) {
+  final correctionNote = correct
+      ? 'If the user makes a mistake, mention a brief correction after your reply.'
+      : 'Listen more than you teach: respond naturally and encouragingly, ask follow-up '
+          'questions, and do NOT correct grammar or spelling. Let the user express '
+          'themselves freely.';
   final base = '''
 You are a friendly English conversation partner helping the user practice spoken English.
 ${level.instruction}
-Keep replies concise and conversational (2-4 sentences). If the user makes a mistake, mention a brief correction after your reply.
+Keep replies concise and conversational (2-4 sentences). $correctionNote
 ''';
   if (scenarioPrompt != null) return '$base\n\nScenario: $scenarioPrompt';
   return base;

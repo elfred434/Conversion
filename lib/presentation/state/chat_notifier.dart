@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:english_conversation_app/domain/entities/conversation_message.dart';
 import 'package:english_conversation_app/domain/entities/level.dart';
+import 'package:english_conversation_app/domain/entities/scenario.dart';
 import 'package:english_conversation_app/domain/usecases/start_conversation.dart';
 import 'package:english_conversation_app/domain/usecases/send_message.dart';
 import 'package:english_conversation_app/domain/usecases/correct_text.dart';
@@ -129,6 +130,15 @@ class ChatNotifier extends StateNotifier<ChatState> {
   /// Corrige la phrase de l'utilisateur (best-effort, non bloquant).
   void _applyCorrection(String messageId, String userText) async {
     if (_level == null) return;
+    // Mode "ecoute" (ex: Raconte ta journee) : pas de correction.
+    Scenario? scenario;
+    for (final s in kScenarios) {
+      if (s.id == _scenarioId) {
+        scenario = s;
+        break;
+      }
+    }
+    if (scenario != null && !scenario.correct) return;
     try {
       final corrected = await _correct(userText: userText, level: _level!);
       if (corrected == null) return;

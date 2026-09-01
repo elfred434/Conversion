@@ -15,15 +15,19 @@ class ConversationRepositoryImpl implements ConversationRepository {
   final LlmClient llmClient;
 
   ConversationMessage _buildSystem(CefrLevel level, String? scenarioId) {
-    String? scenarioPrompt;
+    Scenario? scenario;
     for (final s in kScenarios) {
       if (s.id == scenarioId) {
-        scenarioPrompt = s.prompt;
+        scenario = s;
         break;
       }
     }
     return ConversationMessage.system(
-      buildSystemPrompt(level, scenarioPrompt: scenarioPrompt),
+      buildSystemPrompt(
+        level,
+        scenarioPrompt: scenario?.prompt,
+        correct: scenario?.correct ?? true,
+      ),
     );
   }
 
