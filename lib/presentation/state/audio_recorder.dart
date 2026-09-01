@@ -18,12 +18,12 @@ class AudioRecorder {
     final path =
         '${Directory.systemTemp.path}/pron_${DateTime.now().microsecondsSinceEpoch}.wav';
     await _recorder.start(
-      path: path,
-      config: const rec.RecordConfig(
+      const rec.RecordConfig(
         encoder: rec.AudioEncoder.wav,
         sampleRate: 16000,
         numChannels: 1,
       ),
+      path: path,
     );
     _isRecording = true;
   }
@@ -31,6 +31,7 @@ class AudioRecorder {
   Future<Uint8List> stop() async {
     final path = await _recorder.stop();
     _isRecording = false;
+    if (path == null) return Uint8List(0);
     return await File(path).readAsBytes();
   }
 
