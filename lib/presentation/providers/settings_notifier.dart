@@ -12,12 +12,16 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
     String? apiKey,
     String? model,
     bool? autoSpeak,
+    String? azureKey,
+    String? azureRegion,
   }) {
     state = state.copyWith(
       provider: provider,
       apiKey: apiKey,
       model: model,
       autoSpeak: autoSpeak,
+      azureKey: azureKey,
+      azureRegion: azureRegion,
     );
   }
 

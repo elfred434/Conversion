@@ -21,6 +21,8 @@ import 'package:english_conversation_app/domain/repositories/history_repository.
 import 'package:english_conversation_app/data/repositories/history_repository_impl.dart';
 import 'package:english_conversation_app/domain/repositories/progress_repository.dart';
 import 'package:english_conversation_app/data/repositories/progress_repository_impl.dart';
+import 'package:english_conversation_app/domain/repositories/pronunciation_repository.dart';
+import 'package:english_conversation_app/data/repositories/azure_pronunciation_repository.dart';
 import 'package:english_conversation_app/presentation/state/chat_notifier.dart';
 import 'package:english_conversation_app/presentation/state/chat_state.dart';
 import 'package:english_conversation_app/presentation/providers/settings_notifier.dart';
@@ -54,6 +56,11 @@ final progressRepositoryProvider = Provider<ProgressRepository>(
 
 final progressProvider = FutureProvider<ProgressStats>(
     (ref) => ref.watch(progressRepositoryProvider).getStats());
+
+final pronunciationRepositoryProvider = Provider<PronunciationRepository>((ref) {
+  final s = ref.watch(settingsNotifierProvider);
+  return AzurePronunciationRepository(key: s.azureKey, region: s.azureRegion);
+});
 
 final settingsNotifierProvider =
     StateNotifierProvider<SettingsNotifier, AppSettings>(
