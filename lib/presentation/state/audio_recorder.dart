@@ -6,7 +6,7 @@ import 'package:record/record.dart' as rec;
 /// renvoie les octets audio pour l'evaluation phonetique.
 /// (prefixe `rec` pour eviter le conflit avec le type natif `Record` de Dart 3)
 class AudioRecorder {
-  final rec.Record _recorder = rec.Record();
+  final rec.AudioRecorder _recorder = rec.AudioRecorder();
   bool _isRecording = false;
 
   Future<bool> hasPermission() => _recorder.hasPermission();
