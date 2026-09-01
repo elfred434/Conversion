@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:english_conversation_app/domain/entities/conversation_message.dart';
 import 'package:english_conversation_app/domain/entities/level.dart';
+import 'package:english_conversation_app/domain/entities/correction_result.dart';
 import 'package:english_conversation_app/domain/entities/scenario.dart';
 import 'package:english_conversation_app/domain/repositories/conversation_repository.dart';
 import 'package:english_conversation_app/data/datasources/remote/llm_client.dart';

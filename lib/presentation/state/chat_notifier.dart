@@ -4,7 +4,6 @@ import 'package:english_conversation_app/domain/entities/conversation_message.da
 import 'package:english_conversation_app/domain/entities/level.dart';
 import 'package:english_conversation_app/domain/entities/scenario.dart';
 import 'package:english_conversation_app/domain/entities/conversation_session.dart';
-import 'package:english_conversation_app/domain/entities/correction_result.dart';
 import 'package:english_conversation_app/domain/usecases/start_conversation.dart';
 import 'package:english_conversation_app/domain/usecases/send_message.dart';
 import 'package:english_conversation_app/domain/usecases/correct_text.dart';
