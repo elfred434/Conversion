@@ -1,4 +1,4 @@
-import 'package:english_conversation_app/domain/entities/level.dart';
+import 'package:english_conversation_app/config/llm_providers.dart';
 
 /// Reglages de l'application (provider + cle API), persistes localement.
 class AppSettings {

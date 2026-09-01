@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:english_conversation_app/domain/entities/app_settings.dart';
+import 'package:english_conversation_app/domain/repositories/settings_repository.dart';
+import 'package:english_conversation_app/config/llm_providers.dart';
 import 'package:english_conversation_app/presentation/providers/providers.dart';
 
 class SettingsNotifier extends StateNotifier<AppSettings> {
@@ -11,6 +13,8 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
   void _load() async {
     state = await _repository.load();
   }
+
+  void setSettings(AppSettings s) => state = s;
 
   void update({
     LlmProvider? provider,
