@@ -47,8 +47,8 @@ class AzurePronunciationRepository implements PronunciationRepository {
       final wMap = w as Map<String, dynamic>;
       final wpa = wMap['PronunciationAssessment'] as Map<String, dynamic>? ?? {};
       return WordScore(
-        word: wMap['Word'] as String? ?? '',
-        accuracy: _toDouble(wpa['AccuracyScore']),
+        wMap['Word'] as String? ?? '',
+        _toDouble(wpa['AccuracyScore']),
       );
     }).toList();
     return PronunciationAssessment(

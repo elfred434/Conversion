@@ -1,11 +1,12 @@
 import 'dart:io';
 import 'dart:typed_data';
-import 'package:record/record.dart';
+import 'package:record/record.dart' as rec;
 
 /// Enregistre un court extrait WAV 16 kHz mono (requis par Azure) puis
 /// renvoie les octets audio pour l'evaluation phonetique.
+/// (prefixe `rec` pour eviter le conflit avec le type natif `Record` de Dart 3)
 class AudioRecorder {
-  final Record _recorder = Record();
+  final rec.Record _recorder = rec.Record();
   bool _isRecording = false;
 
   Future<bool> hasPermission() => _recorder.hasPermission();
@@ -18,8 +19,8 @@ class AudioRecorder {
         '${Directory.systemTemp.path}/pron_${DateTime.now().microsecondsSinceEpoch}.wav';
     await _recorder.start(
       path: path,
-      config: const RecordConfig(
-        encoder: AudioEncoder.wav,
+      config: const rec.RecordConfig(
+        encoder: rec.AudioEncoder.wav,
         sampleRate: 16000,
         numChannels: 1,
       ),
