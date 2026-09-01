@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:english_conversation_app/domain/entities/conversation_message.dart';
 import 'package:english_conversation_app/domain/entities/level.dart';
 import 'package:english_conversation_app/domain/entities/scenario.dart';
+import 'package:english_conversation_app/domain/entities/conversation_session.dart';
 import 'package:english_conversation_app/domain/usecases/start_conversation.dart';
 import 'package:english_conversation_app/domain/usecases/send_message.dart';
 import 'package:english_conversation_app/domain/usecases/correct_text.dart';
@@ -21,25 +22,46 @@ class ChatNotifier extends StateNotifier<ChatState> {
 
   CefrLevel? _level;
   String? _scenarioId;
+  String? _sessionId;
+  String _sessionTitle = '';
   int _counter = 0;
 
   String _newId() => 'm${_counter++}_${DateTime.now().microsecondsSinceEpoch}';
-  String get _historyKey => _scenarioId ?? 'free';
+
+  String _resolveTitle(String? scenarioId) {
+    if (scenarioId == null) return 'Conversation libre';
+    for (final s in kScenarios) {
+      if (s.id == scenarioId) return s.title;
+    }
+    return 'Conversation';
+  }
 
   /// Reduit les infos sensibles (cle API) des messages d'erreur affiches a l'utilisateur.
   String _redact(String message) =>
       message.replaceAll(RegExp(r'key=[^&\s"]+'), 'key=***');
 
-  /// Demarre une nouvelle conversation (ou restaure l'historique existant).
-  Future<void> start({required CefrLevel level, String? scenarioId}) async {
+  /// Demarre une conversation : reprend une session existante (sessionId) ou
+  /// en cree une nouvelle (salutation du tuteur).
+  Future<void> start({
+    required CefrLevel level,
+    String? scenarioId,
+    String? sessionId,
+  }) async {
     _level = level;
     _scenarioId = scenarioId;
 
-    final saved = await _history.load(_historyKey);
-    if (saved.isNotEmpty) {
-      state = ChatState(messages: saved);
-      return;
+    if (sessionId != null) {
+      final session = await _history.getSession(sessionId);
+      if (session != null) {
+        _sessionId = session.id;
+        _sessionTitle = session.title;
+        state = ChatState(messages: session.messages);
+        return;
+      }
     }
+
+    _sessionId = _newId();
+    _sessionTitle = _resolveTitle(scenarioId);
 
     state = ChatState(
       messages: [ConversationMessage.assistant('', id: _newId())],
@@ -57,7 +79,7 @@ class ChatNotifier extends StateNotifier<ChatState> {
       state = state.copyWith(error: _redact(e.toString()));
     } finally {
       state = state.copyWith(isStreaming: false);
-      _persist();
+      await _persist();
     }
   }
 
@@ -101,14 +123,21 @@ class ChatNotifier extends StateNotifier<ChatState> {
       state = state.copyWith(error: _redact(e.toString()));
     } finally {
       state = state.copyWith(isStreaming: false);
-      _persist();
+      await _persist();
     }
 
     _applyCorrection(userMsg.id, trimmed);
   }
 
-  void _persist() {
-    _history.save(_historyKey, state.messages);
+  Future<void> _persist() async {
+    if (_sessionId == null) return;
+    final session = ConversationSession(
+      id: _sessionId!,
+      title: _sessionTitle,
+      scenarioId: _scenarioId ?? '',
+      messages: state.messages,
+    );
+    await _history.saveSession(session);
   }
 
   List<ConversationMessage> _updateAssistant(String content) {

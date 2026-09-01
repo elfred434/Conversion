@@ -48,9 +48,12 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
     if (!_started) {
       _started = true;
       final scenarioId = ref.read(selectedScenarioProvider);
+      final sessionId = ref.read(selectedSessionProvider);
+      ref.read(selectedSessionProvider.notifier).state = null;
       ref.read(chatProvider.notifier).start(
             level: level,
             scenarioId: scenarioId,
+            sessionId: sessionId,
           );
     }
   }

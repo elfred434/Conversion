@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:english_conversation_app/config/llm_providers.dart';
 import 'package:english_conversation_app/domain/entities/app_settings.dart';
+import 'package:english_conversation_app/domain/entities/conversation_session.dart';
 import 'package:english_conversation_app/domain/repositories/conversation_repository.dart';
 import 'package:english_conversation_app/domain/repositories/user_repository.dart';
 import 'package:english_conversation_app/domain/usecases/start_conversation.dart';
@@ -73,6 +74,11 @@ final getUserProfileProvider = Provider<GetUserProfile>(
 
 /// Scenario selectionne sur l'ecran d'accueil (passe a la conversation).
 final selectedScenarioProvider = StateProvider<String?>((ref) => null);
+
+final selectedSessionProvider = StateProvider<String?>((ref) => null);
+
+final sessionsProvider = FutureProvider<List<ConversationSession>>(
+    (ref) => ref.watch(historyRepositoryProvider).listSessions());
 
 final chatProvider =
     StateNotifierProvider<ChatNotifier, ChatState>((ref) => ChatNotifier(
